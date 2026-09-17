@@ -32,7 +32,7 @@ async fn main() {
     let mut read_task = tokio::spawn(async move {
         while let Some(msg) = read.next().await {
             match msg {
-                Ok(Message::Text(text)) => println!("< {text}"),
+                Ok(Message::Text(text)) => render(&text),
                 Ok(Message::Binary(data)) => println!("< [binary {} bytes]", data.len()),
                 Ok(Message::Close(frame)) => {
                     println!("Connection closed by server: {frame:?}");
@@ -51,6 +51,7 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let mut lines = BufReader::new(stdin).lines();
 
+    println!("Commands: /name <name>  /join <room>  /leave  /who  (anything else is chat text)");
     println!("Type a message and press enter to send. Ctrl+D to quit.");
     loop {
         tokio::select! {
@@ -77,5 +78,15 @@ async fn main() {
                 break;
             }
         }
+    }
+}
+
+fn render(line: &str) {
+    match line.split_once(' ') {
+        Some(("MSG", rest)) => println!("{rest}"),
+        Some(("SYS", rest)) => println!("*** {rest}"),
+        Some(("ERR", rest)) => println!("!!! {rest}"),
+        Some(("USERS", rest)) => println!("--- users: {rest}"),
+        _ => println!("< {line}"),
     }
 }
